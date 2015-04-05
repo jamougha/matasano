@@ -1,5 +1,5 @@
 extern crate matasano;
-use matasano::base64::{Packable, hex_digit_to_num, to_mime_base64};
+use matasano::bases::{Packable, hex_digit_to_num, to_mime_base64};
 
 fn main() {
 	// 49 = 32 + 16 + 1 = 00110001
