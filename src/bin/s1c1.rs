@@ -1,5 +1,5 @@
 extern crate matasano;
-use matasano::base64::Conversions;
+use matasano::base64::Packable;
 use std::str::from_utf8;
 
 fn main() {
@@ -7,5 +7,9 @@ fn main() {
 	// ABCDEFGHIJKLMNOPQRS
 	let hex  = b"49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d";
 	let base64 = "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t";
-	assert_eq!(base64, from_utf8(&hex.hex_to_base64()[..]).unwrap());
+    let h = hex.iter().map(|x| *x).collect::<Vec<u8>>();
+
+    println!("{:?}", h.iter().unpack(8).map(|x| x as char).collect::<String>());
+	//assert_eq!(base64, from_utf8(&hex.hex_to_base64()[..]).unwrap());
 }
+
