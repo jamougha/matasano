@@ -1,32 +1,32 @@
 pub mod base64 {
 
-    pub struct Bytes<'a, I: 'a> {
-        iter: &'a mut I,
-        next_byte: Option<&'a u8>,
+    pub struct Bytes<I> where I: Iterator<Item = u8>{
+        iter: I,
+        next_byte: Option<u8>,
         next_bit: u8,
         byte_size: u8,
-        out_byte: u8,
+        in_byte_size: u8,
     }
 
-    impl<'a, 'b, I: Iterator<Item = &'a u8>> Iterator for Bytes<'a, I> {
-        type Item = &'b u8;
+    impl<I> Iterator for Bytes<I> where I: Iterator<Item = u8> {
+        type Item = u8;
 
-        fn next(&'b mut self) -> Option<&'b u8> {
-            self.out_byte = 0;
+        fn next(&mut self) -> Option<u8> {
+            let mut out_byte = 0;
             let mut out_bit = 1 << (self.byte_size - 1);
             loop {
                 if out_bit == 0 {
-                    return Some(&self.out_byte);
+                    return Some(out_byte);
                 }
                 let next_bit = self.next_bit;
                 if next_bit == 0 {
                     self.next_byte = self.iter.next();
-                    self.next_bit = 1 << 7;
+                    self.next_bit = 1 << (self.in_byte_size - 1);
                 }
 
-                if let Some(&next_byte) = self.next_byte {
+                if let Some(next_byte) = self.next_byte {
                     if self.next_bit & next_byte != 0 {
-                        self.out_byte |= out_bit;
+                        out_byte |= out_bit;
                     }
                 } else {
                     return None;
@@ -38,8 +38,9 @@ pub mod base64 {
         }
     }
 
-    pub trait Packable<'a, I: Iterator> {
-        fn unpack(&'a mut self, bits: u8) -> Bytes<'a, I>;
+    pub trait Packable<I: Iterator> {
+        fn unpack(self, bits: u8) -> Bytes<I>;
+        fn pack(self, bits: u8) -> Bytes<I>;
     }
 
     // impl<'a, I> Packable<'a, I> for I where I: Iterator<Item = u8> {
@@ -53,14 +54,24 @@ pub mod base64 {
     //     }
     // }
 
-    impl<'a, I> Packable<'a, I> for I where I: Iterator<Item = &'a u8> {
-        fn unpack(&'a mut self, byte_size: u8) -> Bytes<'a, I> {
+    impl<I> Packable<I> for I where I: Iterator<Item = u8> {
+        fn unpack(self, byte_size: u8) -> Bytes<I> {
             Bytes {
                 iter: self,
                 next_byte: None,
                 next_bit: 0,
                 byte_size: byte_size,
-                out_byte: 0,
+                in_byte_size: 8,
+            }
+        }
+
+        fn pack(self, byte_size: u8) -> Bytes<I> {
+            Bytes {
+                iter: self,
+                next_byte: None,
+                next_bit: 0,
+                byte_size: 8,
+                in_byte_size: byte_size,
             }
         }
     }
